@@ -1,4 +1,5 @@
-const Photo = require('../models/photo.model');
+const Photo = require("../models/photo.model");
+const sanitize = require("mongo-sanitize");
 
 /****** SUBMIT PHOTO ********/
 
@@ -9,12 +10,36 @@ exports.add = async (req, res) => {
     const { title, author, email } = req.fields;
     const file = req.files.file;
 
-    if(title && author && email && file && isAllowedExt && author.length <=50 && title.length <=25) { // if fields are not empty...
+    if (title && author && email && file) { // if fields are not empty...
 
-      const fileName = file.path.split('/').slice(-1)[0]; // cut only filename from full path, e.g. C:/test/abc.jpg -> abc.jpg
-      const fileExt = fileName.split('.').slice(-1)[0];
-      if (fileExt === 'gif' || fileExt === 'jpg' || fileExt === 'png') {
-        const newPhoto = new Photo({ title, author, email, src: fileName, votes: 0 });
+      const emailPattern = new RegExp(/^[a-zA-Z.]+@[a-zA-Z]+\.[a-zA-Z]+$/);
+      const stringPattern = new RegExp(/^[a-zA-Z0-9.,! ]+$/);
+      // Validate email and string values using the regular expression
+      if (
+        !email.match(emailPattern) ||
+        !author.match(stringPattern) ||
+        !title.match(stringPattern)
+      ) {
+        throw new Error("Wrong input!");
+      }
+
+      const fileName = file.path.split("/").slice(-1)[0]; // cut only filename from full path, e.g. C:/test/abc.jpg -> abc.jpg
+      const fileExt = fileName.split(".").slice(-1)[0];
+      if (
+        (fileExt === "gif" || fileExt === "jpg" || fileExt === "png") &&
+        title.length <= 25 &&
+        author.length <= 50
+      ) {
+        const titleClean = sanitize(title);
+        const authorClean = sanitize(author);
+        const emailClean = sanitize(email);
+        const newPhoto = new Photo({
+          title: titleClean,
+          author: authorClean,
+          email: emailClean,
+          src: fileName,
+          votes: 0,
+        });
         await newPhoto.save(); // ...save new photo in DB
         res.json(newPhoto);      
       } else {
