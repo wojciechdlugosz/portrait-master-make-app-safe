@@ -4,11 +4,12 @@ const Photo = require('../models/photo.model');
 
 exports.add = async (req, res) => {
 
+
   try {
     const { title, author, email } = req.fields;
     const file = req.files.file;
 
-    if(title && author && email && file) { // if fields are not empty...
+    if(title && author && email && file && isAllowedExt && author.length <=50 && title.length <=25) { // if fields are not empty...
 
       const fileName = file.path.split('/').slice(-1)[0]; // cut only filename from full path, e.g. C:/test/abc.jpg -> abc.jpg
       const fileExt = fileName.split('.').slice(-1)[0];
